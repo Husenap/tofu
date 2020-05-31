@@ -1,0 +1,11 @@
+[package]
+name = "tofu"
+version = "0.1.0"
+authors = ["Hussein Taher <hussein_taher@outlook.com>"]
+edition = "2018"
+
+[dependencies]
+cgmath = "0.17.0"
+gl = "0.14.0"
+glfw = "0.37.0"
+image = "0.23.4"
