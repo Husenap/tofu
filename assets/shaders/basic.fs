@@ -20,5 +20,6 @@ void main(){
     float f = max(0.0, dot(vNormal, vec3(0.0, 1.0, 0.0)));
     f = 0.1 + 0.9*f;
 
-    FragColor = mix(col1, col2, smoothstep(0.1, 0.9, vUV.x)) * f;
+    //FragColor = mix(col1, col2, smoothstep(0.1, 0.9, vUV.x)) * f;
+    FragColor = vec4(vNormal.xyz, 1.0);
 }

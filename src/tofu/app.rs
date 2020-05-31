@@ -119,62 +119,16 @@ impl App {
         let texture1 = tofu::Texture::new("assets/images/dubu.jpg");
         let texture2 = tofu::Texture::new("assets/images/twice.png");
 
-        let (vao, ebo, texture1, texture2) = unsafe {
+        let monkey = tofu::Model::new("assets/models/monkey.fbx");
+
+        unsafe {
             gl::Enable(gl::DEPTH_TEST);
             gl::Enable(gl::CULL_FACE);
             gl::CullFace(gl::BACK);
 
-            // setup VAO
-            let (mut vbo, mut vao, mut ebo) = (0, 0, 0);
-            gl::GenVertexArrays(1, &mut vao);
-            gl::GenBuffers(1, &mut vbo);
-            gl::GenBuffers(1, &mut ebo);
-
-            gl::BindVertexArray(vao);
-
-            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-            gl::BufferData(
-                gl::ARRAY_BUFFER,
-                (mem::size_of_val(&VERTICES)) as GLsizeiptr,
-                &VERTICES[0] as *const _ as *const c_void,
-                gl::STATIC_DRAW,
-            );
-
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-            gl::BufferData(
-                gl::ELEMENT_ARRAY_BUFFER,
-                mem::size_of_val(&INDICES) as GLsizeiptr,
-                &INDICES[0] as *const u32 as *const c_void,
-                gl::STATIC_DRAW,
-            );
-
-            gl::VertexAttribPointer(
-                0,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                mem::size_of_val(&VERTICES[0]) as GLsizei,
-                ptr::null(),
-            );
-            gl::EnableVertexAttribArray(0);
-            gl::VertexAttribPointer(
-                1,
-                2,
-                gl::FLOAT,
-                gl::FALSE,
-                mem::size_of_val(&VERTICES[0]) as GLsizei,
-                (3 * mem::size_of::<GLfloat>()) as *const c_void,
-            );
-            gl::EnableVertexAttribArray(1);
-
-            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-            gl::BindVertexArray(0);
-
             shader.use_program();
             shader.set_int("texture1", 0);
             shader.set_int("texture2", 1);
-
-            (vao, ebo, texture1, texture2)
         };
 
         self.camera.set_position(Point3::new(0.0, 0.0, 5.0));
@@ -198,8 +152,7 @@ impl App {
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
                 shader.use_program();
-                gl::BindVertexArray(vao);
-                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
+                monkey.use_model();
 
                 texture1.bind(gl::TEXTURE0);
                 texture2.bind(gl::TEXTURE1);
@@ -216,14 +169,10 @@ impl App {
 
                     let model_view_projection = self.camera.get_view_projection() * model;
 
-                    shader.set_mat4("uMVP", &model_view_projection);
+                    shader.set_mat4("uModel", &model);
+                    shader.set_mat4("uModelViewProjection", &model_view_projection);
 
-                    gl::DrawElements(
-                        gl::TRIANGLES,
-                        INDICES.len() as GLsizei,
-                        gl::UNSIGNED_INT,
-                        ptr::null(),
-                    );
+                    monkey.draw();
                 }
             }
 
