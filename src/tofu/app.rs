@@ -2,11 +2,7 @@ extern crate glfw;
 use self::glfw::{Action, Context, Key};
 
 extern crate gl;
-use self::gl::types::*;
 
-use std::mem;
-use std::os::raw::c_void;
-use std::ptr;
 use std::sync::mpsc::Receiver;
 
 use cgmath::prelude::*;
@@ -14,72 +10,9 @@ use cgmath::*;
 
 use crate::tofu;
 
-const SCREEN_WIDTH: u32 = 1200;
-const SCREEN_HEIGHT: u32 = 1200;
-
-#[allow(dead_code)]
-pub struct Vertex {
-    pos: Vector3<f32>,
-    uv: Vector2<f32>,
-}
-
-const VERTICES: [Vertex; 8] = [
-    Vertex {
-        pos: vec3(-0.5, 0.5, -0.5),
-        uv: vec2(0.0, 1.0),
-    },
-    Vertex {
-        pos: vec3(0.5, 0.5, -0.5),
-        uv: vec2(1.0, 1.0),
-    },
-    Vertex {
-        pos: vec3(-0.5, -0.5, -0.5),
-        uv: vec2(0.0, 0.0),
-    },
-    Vertex {
-        pos: vec3(0.5, -0.5, -0.5),
-        uv: vec2(1.0, 0.0),
-    },
-    Vertex {
-        pos: vec3(-0.5, 0.5, 0.5),
-        uv: vec2(1.0, 1.0),
-    },
-    Vertex {
-        pos: vec3(0.5, 0.5, 0.5),
-        uv: vec2(0.0, 1.0),
-    },
-    Vertex {
-        pos: vec3(-0.5, -0.5, 0.5),
-        uv: vec2(1.0, 0.0),
-    },
-    Vertex {
-        pos: vec3(0.5, -0.5, 0.5),
-        uv: vec2(0.0, 0.0),
-    },
-];
-
-#[rustfmt::skip]
-const INDICES: [u32; 36] = [
-    0, 1, 2, 1, 3, 2,
-    0, 4, 5, 0, 5, 1,
-    2, 3, 7, 2, 7, 6,
-    6, 5, 4, 6, 7, 5,
-    4, 0, 6, 0, 2, 6,
-    1, 5, 3, 5, 7, 3,
-];
-
-const CUBE_POSITIONS: [Vector3<f32>; 10] = [
-    vec3(0.0, 0.0, 0.0),
-    vec3(2.0, 5.0, -15.0),
-    vec3(-1.5, -2.2, -2.5),
-    vec3(-3.8, -2.0, -12.3),
-    vec3(2.4, -0.4, -3.5),
-    vec3(-1.7, 3.0, -7.5),
-    vec3(1.3, -2.0, -2.5),
-    vec3(1.5, 2.0, -2.5),
-    vec3(1.5, 0.2, -1.5),
-    vec3(-1.3, 1.0, -1.5),
-];
+const SCREEN_WIDTH: u32 = 1600;
+const SCREEN_HEIGHT: u32 = 900;
+const FOV: f32 = 50.0;
 
 pub struct App {
     camera: tofu::Camera,
@@ -116,10 +49,16 @@ impl App {
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
         let shader = tofu::Shader::new("assets/shaders/basic.vs", "assets/shaders/basic.fs");
-        let texture1 = tofu::Texture::new("assets/images/dubu.jpg");
-        let texture2 = tofu::Texture::new("assets/images/twice.png");
 
-        let monkey = tofu::Model::new("assets/models/monkey.fbx");
+        // let texture_diffuse = tofu::Texture::new("assets/models/walther_01/walther_01_diffuse.png");
+        // let texture_normal = tofu::Texture::new("assets/models/walther_01/walther_01_normal.png");
+        // let texture_arm = tofu::Texture::new("assets/models/walther_01/walther_01_arm.png");
+        // let model_asset = tofu::Model::new("assets/models/walther_01/walther_01.fbx");
+
+        let texture_albedo = tofu::Texture::new("assets/models/backpack/1001_albedo.jpg");
+        let texture_normal = tofu::Texture::new("assets/models/backpack/1001_normal.png");
+        let texture_arm = tofu::Texture::new("assets/models/backpack/1001_arm.jpg");
+        let model_asset = tofu::Model::new("assets/models/backpack/backpack.fbx");
 
         unsafe {
             gl::Enable(gl::DEPTH_TEST);
@@ -127,12 +66,14 @@ impl App {
             gl::CullFace(gl::BACK);
 
             shader.use_program();
-            shader.set_int("texture1", 0);
-            shader.set_int("texture2", 1);
+            shader.set_int("uAlbedoTexture", 0);
+            shader.set_int("uNormalTexture", 1);
+            shader.set_int("uARMTexture", 2);
         };
 
-        self.camera.set_position(Point3::new(0.0, 0.0, 5.0));
-        self.camera.make_perspective(78.0, 1.0);
+        self.camera.set_position(Point3::new(0.0, 1.0, 7.0));
+        self.camera
+            .make_perspective(FOV, SCREEN_WIDTH as f32 / SCREEN_HEIGHT as f32);
 
         let mut last_frame = glfw.get_time() as f32;
         let mut delta_time;
@@ -152,28 +93,28 @@ impl App {
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
                 shader.use_program();
-                monkey.use_model();
+                model_asset.use_model();
 
-                texture1.bind(gl::TEXTURE0);
-                texture2.bind(gl::TEXTURE1);
+                texture_albedo.bind(gl::TEXTURE0);
+                texture_normal.bind(gl::TEXTURE1);
+                texture_arm.bind(gl::TEXTURE2);
 
                 shader.set_float("uTime", time);
 
-                for (i, position) in CUBE_POSITIONS.iter().enumerate() {
-                    let t = time + i as f32;
-                    let mut model: Matrix4<f32> = Matrix4::from_axis_angle(
-                        vec3(0.5, 1.0, (t * 0.73).sin()).normalize(),
-                        Rad(t),
-                    );
-                    model = Matrix4::from_translation(*position) * model;
+                let model = Matrix4::from_scale(1.0);
+                //model = Matrix4::from_angle_x(Deg(-90.0)) * model;
+                //model = Matrix4::from_angle_y(Deg(180.0)) * model;
+                //model = Matrix4::from_translation(vec3(4.0, 0.0, 0.0)) * model;
 
-                    let model_view_projection = self.camera.get_view_projection() * model;
+                let inverse_model = Transform::inverse_transform(&model).unwrap().transpose();
 
-                    shader.set_mat4("uModel", &model);
-                    shader.set_mat4("uModelViewProjection", &model_view_projection);
+                let model_view_projection = self.camera.get_view_projection() * model;
 
-                    monkey.draw();
-                }
+                shader.set_mat4("uModel", &model);
+                shader.set_mat4("uInverseModel", &inverse_model);
+                shader.set_mat4("uModelViewProjection", &model_view_projection);
+
+                model_asset.draw();
             }
 
             window.swap_buffers();
@@ -190,7 +131,7 @@ impl App {
                     unsafe {
                         gl::Viewport(0, 0, width, height);
                         self.camera
-                            .make_perspective(50.0, width as f32 / height as f32);
+                            .make_perspective(FOV, width as f32 / height as f32);
                     }
                 }
             }

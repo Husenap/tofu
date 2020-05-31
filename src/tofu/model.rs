@@ -1,5 +1,3 @@
-use assimp::*;
-
 use cgmath::*;
 use cgmath::{Vector2, Vector3};
 
@@ -9,6 +7,7 @@ use std::ptr;
 
 use gl::types::*;
 
+#[allow(dead_code)]
 pub struct Vertex {
     position: Vector3<f32>,
     normal: Vector3<f32>,
@@ -39,8 +38,12 @@ impl Model {
         importer.triangulate(true);
         importer.join_identical_vertices(true);
         importer.optimize_meshes(true);
-        importer.generate_normals(|n| n.enable = true);
+        importer.generate_normals(|n| {
+            n.enable = true;
+            n.smooth = true;
+        });
         importer.calc_tangent_space(|t| t.enable = true);
+        importer.flip_uvs(true);
 
         let scene = importer
             .read_file(model_filepath)

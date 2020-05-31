@@ -2,24 +2,32 @@
 
 out vec4 FragColor;
 
-in vec2 vUV;
+in vec3 vPos;
 in vec3 vNormal;
+in vec2 vUV;
 
-uniform sampler2D texture1;
-uniform sampler2D texture2;
+uniform sampler2D uAlbedoTexture;
+uniform sampler2D uNormalTexture;
+uniform sampler2D uARMTexture;
 
 uniform float uTime;
 
+const vec3 LIGHT_POSITION = vec3(1.0, 1.0, 1.0);
+
 void main(){
-    vec4 col1 = texture2D(texture1, vUV.xy);
-    col1 *= col1.a;
+    vec4 albedo = texture2D(uAlbedoTexture, vUV).rgba;
+    vec3 normal = texture2D(uNormalTexture, vUV).xyz;
+    vec3 arm = texture2D(uARMTexture, vUV).xyz;
 
-    vec4 col2 = texture2D(texture2, vUV.xy);
-    col2 *= col2.a;
+    vec3 col = albedo.rgb;
 
-    float f = max(0.0, dot(vNormal, vec3(0.0, 1.0, 0.0)));
-    f = 0.1 + 0.9*f;
+    vec3 n = normalize(vNormal);
+    vec3 lightDir = normalize(LIGHT_POSITION - vPos);
 
-    //FragColor = mix(col1, col2, smoothstep(0.1, 0.9, vUV.x)) * f;
-    FragColor = vec4(vNormal.xyz, 1.0);
+    float f = min(max(0.0, dot(normal, lightDir)), 1.0);
+    col *= f;
+
+    col *= arm.x;
+
+    FragColor = vec4(col, 1.0);
 }

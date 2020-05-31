@@ -1,4 +1,6 @@
-extern crate image;
+extern crate stb_image;
+
+use stb_image::*;
 
 use gl::types::*;
 
@@ -27,24 +29,29 @@ impl Texture {
             );
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
 
-            let texture_data = image::open(&Path::new(image_filepath))
-                .expect("Failed to load texture!")
-                .flipv()
-                .into_rgba();
-            let (w, h) = (texture_data.width(), texture_data.height());
-            let texture_blob = texture_data.into_raw();
-            gl::TexImage2D(
-                gl::TEXTURE_2D,
-                0,
-                gl::RGBA as GLint,
-                w as GLsizei,
-                h as GLsizei,
-                0,
-                gl::RGBA,
-                gl::UNSIGNED_BYTE,
-                &texture_blob[0] as *const u8 as *const c_void,
-            );
-            gl::GenerateMipmap(gl::TEXTURE_2D);
+            if let image::LoadResult::ImageU8(texture_data) = image::load(Path::new(image_filepath))
+            {
+                let source_format = if texture_data.depth == 3 {
+                    gl::RGB
+                } else {
+                    gl::RGBA
+                };
+
+                gl::TexImage2D(
+                    gl::TEXTURE_2D,
+                    0,
+                    gl::RGBA as GLint,
+                    texture_data.width as GLsizei,
+                    texture_data.height as GLsizei,
+                    0,
+                    source_format,
+                    gl::UNSIGNED_BYTE,
+                    texture_data.data.as_ptr() as *const u8 as *const c_void,
+                );
+                gl::GenerateMipmap(gl::TEXTURE_2D);
+            } else {
+                panic!("Failed to load image!");
+            }
         }
 
         texture
