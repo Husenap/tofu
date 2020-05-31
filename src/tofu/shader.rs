@@ -12,7 +12,7 @@ use gl::types::*;
 const LOG_SIZE: usize = 1024;
 
 pub struct Shader {
-    pub id: u32,
+    id: u32,
 }
 
 impl Shader {
