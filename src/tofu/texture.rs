@@ -7,6 +7,7 @@ use gl::types::*;
 use std::ffi::c_void;
 use std::path::Path;
 
+#[derive(Clone)]
 pub struct Texture {
     id: GLuint,
 }
@@ -31,7 +32,11 @@ impl Texture {
 
             if let image::LoadResult::ImageU8(texture_data) = image::load(Path::new(image_filepath))
             {
-                let source_format = if texture_data.depth == 3 {
+                let source_format = if texture_data.depth == 1 {
+                    gl::RED
+                } else if texture_data.depth == 2 {
+                    gl::RG
+                } else if texture_data.depth == 3 {
                     gl::RGB
                 } else {
                     gl::RGBA
@@ -57,7 +62,7 @@ impl Texture {
         texture
     }
 
-    pub unsafe fn bind(&self, slot: GLenum) {
+    pub unsafe fn bind(&self, slot: u32) {
         gl::ActiveTexture(slot);
         gl::BindTexture(gl::TEXTURE_2D, self.id);
     }

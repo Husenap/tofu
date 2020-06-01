@@ -49,26 +49,12 @@ impl App {
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
         let shader = tofu::Shader::new("assets/shaders/basic.vs", "assets/shaders/basic.fs");
-
-        // let texture_diffuse = tofu::Texture::new("assets/models/walther_01/walther_01_diffuse.png");
-        // let texture_normal = tofu::Texture::new("assets/models/walther_01/walther_01_normal.png");
-        // let texture_arm = tofu::Texture::new("assets/models/walther_01/walther_01_arm.png");
-        // let model_asset = tofu::Model::new("assets/models/walther_01/walther_01.fbx");
-
-        let texture_albedo = tofu::Texture::new("assets/models/backpack/1001_albedo.jpg");
-        let texture_normal = tofu::Texture::new("assets/models/backpack/1001_normal.png");
-        let texture_arm = tofu::Texture::new("assets/models/backpack/1001_arm.jpg");
-        let model_asset = tofu::Model::new("assets/models/backpack/backpack.fbx");
+        let model_asset = tofu::Model::new("assets/models/sponza/sponza.obj");
 
         unsafe {
             gl::Enable(gl::DEPTH_TEST);
             gl::Enable(gl::CULL_FACE);
             gl::CullFace(gl::BACK);
-
-            shader.use_program();
-            shader.set_int("uAlbedoTexture", 0);
-            shader.set_int("uNormalTexture", 1);
-            shader.set_int("uARMTexture", 2);
         };
 
         self.camera.set_position(Point3::new(0.0, 1.0, 7.0));
@@ -92,16 +78,7 @@ impl App {
                 gl::ClearColor(1.0 * 0.2, 0.37 * 0.2, 0.64 * 0.2, 1.0);
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
-                shader.use_program();
-                model_asset.use_model();
-
-                texture_albedo.bind(gl::TEXTURE0);
-                texture_normal.bind(gl::TEXTURE1);
-                texture_arm.bind(gl::TEXTURE2);
-
-                shader.set_float("uTime", time);
-
-                let model = Matrix4::from_scale(1.0);
+                let model = Matrix4::from_scale(0.01);
                 //model = Matrix4::from_angle_x(Deg(-90.0)) * model;
                 //model = Matrix4::from_angle_y(Deg(180.0)) * model;
                 //model = Matrix4::from_translation(vec3(4.0, 0.0, 0.0)) * model;
@@ -110,11 +87,14 @@ impl App {
 
                 let model_view_projection = self.camera.get_view_projection() * model;
 
+                shader.use_program();
+
+                shader.set_float("uTime", time);
                 shader.set_mat4("uModel", &model);
                 shader.set_mat4("uInverseModel", &inverse_model);
                 shader.set_mat4("uModelViewProjection", &model_view_projection);
 
-                model_asset.draw();
+                model_asset.draw(&shader);
             }
 
             window.swap_buffers();

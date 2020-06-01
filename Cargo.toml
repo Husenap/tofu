@@ -8,5 +8,6 @@ edition = "2018"
 cgmath = "0.17.0"
 gl = "0.14.0"
 glfw = "0.37.0"
-assimp = "0.3.1"
 stb_image = "0.2.2"
+#tobj = "2.0.1"
+tobj = { git = "https://github.com/Husenap/tobj", branch = "lowercase_material_words" }
