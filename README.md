@@ -5,4 +5,4 @@ OpenGL Renderer written in Rust.
 
 ## Status
 
-![Build](https://github.com/Husenap/tofu/workflows/Build/badge.svg)
+![Rust Build](https://github.com/Husenap/tofu/workflows/Rust%20Build/badge.svg)
