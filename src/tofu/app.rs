@@ -49,12 +49,15 @@ impl App {
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
         let shader = tofu::Shader::new("assets/shaders/basic.vs", "assets/shaders/basic.fs");
-        let model_asset = tofu::Model::new("assets/models/sponza/sponza.obj");
+
+        let model = tofu::Model::new("assets/models/3d_other_ufnscjdga/ufnscjdga_LOD0.obj");
+        //let model = tofu::Model::new("assets/models/normal_test/normal_test.obj");
 
         unsafe {
             gl::Enable(gl::DEPTH_TEST);
             gl::Enable(gl::CULL_FACE);
             gl::CullFace(gl::BACK);
+            //gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
         };
 
         self.camera.set_position(Point3::new(0.0, 1.0, 7.0));
@@ -78,23 +81,23 @@ impl App {
                 gl::ClearColor(1.0 * 0.2, 0.37 * 0.2, 0.64 * 0.2, 1.0);
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
-                let model = Matrix4::from_scale(0.01);
-                //model = Matrix4::from_angle_x(Deg(-90.0)) * model;
-                //model = Matrix4::from_angle_y(Deg(180.0)) * model;
-                //model = Matrix4::from_translation(vec3(4.0, 0.0, 0.0)) * model;
+                let mut model_matrix = Matrix4::from_scale(1.0);
+                model_matrix = Matrix4::from_angle_y(Rad(time * 0.25)) * model_matrix;
 
-                let inverse_model = Transform::inverse_transform(&model).unwrap().transpose();
+                let normal_matrix = Transform::inverse_transform(&model_matrix)
+                    .unwrap()
+                    .transpose();
 
-                let model_view_projection = self.camera.get_view_projection() * model;
+                let model_view_projection_matrix = self.camera.get_view_projection() * model_matrix;
 
                 shader.use_program();
 
                 shader.set_float("uTime", time);
-                shader.set_mat4("uModel", &model);
-                shader.set_mat4("uInverseModel", &inverse_model);
-                shader.set_mat4("uModelViewProjection", &model_view_projection);
+                shader.set_mat4("uModelMatrix", &model_matrix);
+                shader.set_mat4("uNormalMatrix", &normal_matrix);
+                shader.set_mat4("uModelViewProjectionMatrix", &model_view_projection_matrix);
 
-                model_asset.draw(&shader);
+                model.draw(&shader);
             }
 
             window.swap_buffers();

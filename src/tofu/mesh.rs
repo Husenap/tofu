@@ -1,3 +1,4 @@
+use cgmath::prelude::*;
 use cgmath::{Vector2, Vector3};
 
 use std::ffi::c_void;
@@ -13,6 +14,20 @@ pub struct Vertex {
     pub position: Vector3<f32>,
     pub normal: Vector3<f32>,
     pub uv: Vector2<f32>,
+    pub tangent: Vector3<f32>,
+    pub binormal_headedness: f32,
+}
+
+impl Default for Vertex {
+    fn default() -> Vertex {
+        Vertex {
+            position: Vector3::zero(),
+            normal: Vector3::zero(),
+            uv: Vector2::zero(),
+            tangent: Vector3::zero(),
+            binormal_headedness: 1.0,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -115,6 +130,17 @@ impl Mesh {
             gl::FALSE,
             mem::size_of::<Vertex>() as GLsizei,
             (6 * mem::size_of::<GLfloat>()) as *const c_void,
+        );
+
+        // Tangent
+        gl::EnableVertexAttribArray(3);
+        gl::VertexAttribPointer(
+            3,
+            4,
+            gl::FLOAT,
+            gl::FALSE,
+            mem::size_of::<Vertex>() as GLsizei,
+            (8 * mem::size_of::<GLfloat>()) as *const c_void,
         );
 
         gl::BindVertexArray(0);
