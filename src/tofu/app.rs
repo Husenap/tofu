@@ -2,11 +2,7 @@ extern crate glfw;
 use self::glfw::{Action, Context, Key};
 
 extern crate gl;
-use self::gl::types::*;
 
-use std::mem;
-use std::os::raw::c_void;
-use std::ptr;
 use std::sync::mpsc::Receiver;
 
 use cgmath::prelude::*;
@@ -14,72 +10,9 @@ use cgmath::*;
 
 use crate::tofu;
 
-const SCREEN_WIDTH: u32 = 1200;
-const SCREEN_HEIGHT: u32 = 1200;
-
-#[allow(dead_code)]
-pub struct Vertex {
-    pos: Vector3<f32>,
-    uv: Vector2<f32>,
-}
-
-const VERTICES: [Vertex; 8] = [
-    Vertex {
-        pos: vec3(-0.5, 0.5, -0.5),
-        uv: vec2(0.0, 1.0),
-    },
-    Vertex {
-        pos: vec3(0.5, 0.5, -0.5),
-        uv: vec2(1.0, 1.0),
-    },
-    Vertex {
-        pos: vec3(-0.5, -0.5, -0.5),
-        uv: vec2(0.0, 0.0),
-    },
-    Vertex {
-        pos: vec3(0.5, -0.5, -0.5),
-        uv: vec2(1.0, 0.0),
-    },
-    Vertex {
-        pos: vec3(-0.5, 0.5, 0.5),
-        uv: vec2(1.0, 1.0),
-    },
-    Vertex {
-        pos: vec3(0.5, 0.5, 0.5),
-        uv: vec2(0.0, 1.0),
-    },
-    Vertex {
-        pos: vec3(-0.5, -0.5, 0.5),
-        uv: vec2(1.0, 0.0),
-    },
-    Vertex {
-        pos: vec3(0.5, -0.5, 0.5),
-        uv: vec2(0.0, 0.0),
-    },
-];
-
-#[rustfmt::skip]
-const INDICES: [u32; 36] = [
-    0, 1, 2, 1, 3, 2,
-    0, 4, 5, 0, 5, 1,
-    2, 3, 7, 2, 7, 6,
-    6, 5, 4, 6, 7, 5,
-    4, 0, 6, 0, 2, 6,
-    1, 5, 3, 5, 7, 3,
-];
-
-const CUBE_POSITIONS: [Vector3<f32>; 10] = [
-    vec3(0.0, 0.0, 0.0),
-    vec3(2.0, 5.0, -15.0),
-    vec3(-1.5, -2.2, -2.5),
-    vec3(-3.8, -2.0, -12.3),
-    vec3(2.4, -0.4, -3.5),
-    vec3(-1.7, 3.0, -7.5),
-    vec3(1.3, -2.0, -2.5),
-    vec3(1.5, 2.0, -2.5),
-    vec3(1.5, 0.2, -1.5),
-    vec3(-1.3, 1.0, -1.5),
-];
+const SCREEN_WIDTH: u32 = 1600;
+const SCREEN_HEIGHT: u32 = 900;
+const FOV: f32 = 50.0;
 
 pub struct App {
     camera: tofu::Camera,
@@ -116,69 +49,20 @@ impl App {
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
         let shader = tofu::Shader::new("assets/shaders/basic.vs", "assets/shaders/basic.fs");
-        let texture1 = tofu::Texture::new("assets/images/dubu.jpg");
-        let texture2 = tofu::Texture::new("assets/images/twice.png");
 
-        let (vao, ebo, texture1, texture2) = unsafe {
+        let model = tofu::Model::new("assets/models/3d_other_ufnscjdga/ufnscjdga_LOD0.obj");
+        //let model = tofu::Model::new("assets/models/normal_test/normal_test.obj");
+
+        unsafe {
             gl::Enable(gl::DEPTH_TEST);
             gl::Enable(gl::CULL_FACE);
             gl::CullFace(gl::BACK);
-
-            // setup VAO
-            let (mut vbo, mut vao, mut ebo) = (0, 0, 0);
-            gl::GenVertexArrays(1, &mut vao);
-            gl::GenBuffers(1, &mut vbo);
-            gl::GenBuffers(1, &mut ebo);
-
-            gl::BindVertexArray(vao);
-
-            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-            gl::BufferData(
-                gl::ARRAY_BUFFER,
-                (mem::size_of_val(&VERTICES)) as GLsizeiptr,
-                &VERTICES[0] as *const _ as *const c_void,
-                gl::STATIC_DRAW,
-            );
-
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-            gl::BufferData(
-                gl::ELEMENT_ARRAY_BUFFER,
-                mem::size_of_val(&INDICES) as GLsizeiptr,
-                &INDICES[0] as *const u32 as *const c_void,
-                gl::STATIC_DRAW,
-            );
-
-            gl::VertexAttribPointer(
-                0,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                mem::size_of_val(&VERTICES[0]) as GLsizei,
-                ptr::null(),
-            );
-            gl::EnableVertexAttribArray(0);
-            gl::VertexAttribPointer(
-                1,
-                2,
-                gl::FLOAT,
-                gl::FALSE,
-                mem::size_of_val(&VERTICES[0]) as GLsizei,
-                (3 * mem::size_of::<GLfloat>()) as *const c_void,
-            );
-            gl::EnableVertexAttribArray(1);
-
-            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-            gl::BindVertexArray(0);
-
-            shader.use_program();
-            shader.set_int("texture1", 0);
-            shader.set_int("texture2", 1);
-
-            (vao, ebo, texture1, texture2)
+            //gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
         };
 
-        self.camera.set_position(Point3::new(0.0, 0.0, 5.0));
-        self.camera.make_perspective(78.0, 1.0);
+        self.camera.set_position(Point3::new(0.0, 1.0, 7.0));
+        self.camera
+            .make_perspective(FOV, SCREEN_WIDTH as f32 / SCREEN_HEIGHT as f32);
 
         let mut last_frame = glfw.get_time() as f32;
         let mut delta_time;
@@ -197,34 +81,23 @@ impl App {
                 gl::ClearColor(1.0 * 0.2, 0.37 * 0.2, 0.64 * 0.2, 1.0);
                 gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
-                shader.use_program();
-                gl::BindVertexArray(vao);
-                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
+                let mut model_matrix = Matrix4::from_scale(1.0);
+                model_matrix = Matrix4::from_angle_y(Rad(time * 0.25)) * model_matrix;
 
-                texture1.bind(gl::TEXTURE0);
-                texture2.bind(gl::TEXTURE1);
+                let normal_matrix = Transform::inverse_transform(&model_matrix)
+                    .unwrap()
+                    .transpose();
+
+                let model_view_projection_matrix = self.camera.get_view_projection() * model_matrix;
+
+                shader.use_program();
 
                 shader.set_float("uTime", time);
+                shader.set_mat4("uModelMatrix", &model_matrix);
+                shader.set_mat4("uNormalMatrix", &normal_matrix);
+                shader.set_mat4("uModelViewProjectionMatrix", &model_view_projection_matrix);
 
-                for (i, position) in CUBE_POSITIONS.iter().enumerate() {
-                    let t = time + i as f32;
-                    let mut model: Matrix4<f32> = Matrix4::from_axis_angle(
-                        vec3(0.5, 1.0, (t * 0.73).sin()).normalize(),
-                        Rad(t),
-                    );
-                    model = Matrix4::from_translation(*position) * model;
-
-                    let model_view_projection = self.camera.get_view_projection() * model;
-
-                    shader.set_mat4("uMVP", &model_view_projection);
-
-                    gl::DrawElements(
-                        gl::TRIANGLES,
-                        INDICES.len() as GLsizei,
-                        gl::UNSIGNED_INT,
-                        ptr::null(),
-                    );
-                }
+                model.draw(&shader);
             }
 
             window.swap_buffers();
@@ -241,7 +114,7 @@ impl App {
                     unsafe {
                         gl::Viewport(0, 0, width, height);
                         self.camera
-                            .make_perspective(50.0, width as f32 / height as f32);
+                            .make_perspective(FOV, width as f32 / height as f32);
                     }
                 }
             }

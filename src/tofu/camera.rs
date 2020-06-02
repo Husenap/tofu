@@ -4,7 +4,7 @@ use cgmath::{Matrix4, Vector3};
 use glfw::{Action, Key, MouseButton};
 
 const Z_NEAR: f32 = 0.1;
-const Z_FAR: f32 = 100.0;
+const Z_FAR: f32 = 1000.0;
 const MOVEMENT_SPEED: f32 = 10.0;
 const MOUSE_SENSITIVITY: f32 = 0.1;
 

@@ -2,23 +2,47 @@
 
 out vec4 FragColor;
 
-in vec2 vUV;
+in vec3 vPos;
 in vec3 vNormal;
+in vec2 vUV;
+in vec3 vTangent;
+in vec3 vBinormal;
 
-uniform sampler2D texture1;
-uniform sampler2D texture2;
+uniform sampler2D uAlbedoTexture;
+uniform sampler2D uNormalTexture;
+uniform sampler2D uRoughnessTexture;
+uniform sampler2D uMetallicTexture;
 
 uniform float uTime;
 
 void main(){
-    vec4 col1 = texture2D(texture1, vUV.xy);
-    col1 *= col1.a;
+    float mask = textureLod(uAlbedoTexture, vUV, 0.0).a;
+    if(mask < 0.5){
+        discard;
+    }
 
-    vec4 col2 = texture2D(texture2, vUV.xy);
-    col2 *= col2.a;
+    vec3 albedo = pow(texture(uAlbedoTexture, vUV).rgb, vec3(2.2));
+    vec3 normal = texture(uNormalTexture, vUV).xyz * 2.0 - 1.0;
+    float roughness = texture(uRoughnessTexture, vUV).r;
+    float metallic = texture(uMetallicTexture, vUV).r;
 
-    float f = max(0.0, dot(vNormal, vec3(0.0, 1.0, 0.0)));
-    f = 0.1 + 0.9*f;
+    mat3 tbn = mat3(normalize(vTangent), normalize(vBinormal), normalize(vNormal));
+    vec3 n = normalize(tbn * normal);
 
-    FragColor = mix(col1, col2, smoothstep(0.1, 0.9, vUV.x)) * f;
+    vec3 col = vec3(0.0);
+
+    vec3 sunDirection = normalize(vec3(0.6, 0.35, 0.5));
+    float sunDiffuse = clamp(dot(n, sunDirection), 0.0, 1.0);
+
+    float skyDiffuse = sqrt(clamp(0.5+0.5*dot(n, vec3(0.0, 1.0, 0.0)), 0.0, 1.0));
+
+    float bounceDiffuse = clamp(dot(n, vec3(0.0, -1.0, 0.0)), 0.0, 1.0);
+
+    col += sunDiffuse * vec3(8.10, 6.00, 4.20) * 0.4;
+    col += skyDiffuse * vec3(0.50, 0.70, 1.00);
+    col += bounceDiffuse * vec3(0.20, 0.70, 0.10) * 0.25;
+
+    col *= albedo;
+
+    FragColor = vec4(pow(col, vec3(0.4545)), 1.0);
 }
