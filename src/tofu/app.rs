@@ -126,6 +126,6 @@ impl App {
             window.set_should_close(true)
         }
 
-        self.camera.process_input(&window);
+        self.camera.process_input(window);
     }
 }
