@@ -1,4 +1,5 @@
 use cgmath::prelude::*;
+use cgmath::*;
 use cgmath::{Vector2, Vector3};
 
 use std::ffi::c_void;
@@ -10,6 +11,7 @@ use gl::types::*;
 use crate::tofu;
 
 #[repr(C)]
+#[derive(Clone)]
 pub struct Vertex {
     pub position: Vector3<f32>,
     pub normal: Vector3<f32>,
@@ -22,9 +24,9 @@ impl Default for Vertex {
     fn default() -> Vertex {
         Vertex {
             position: Vector3::zero(),
-            normal: Vector3::zero(),
+            normal: vec3(0.0, 0.0, 1.0),
             uv: Vector2::zero(),
-            tangent: Vector3::zero(),
+            tangent: vec3(1.0, 0.0, 0.0),
             binormal_headedness: 1.0,
         }
     }
@@ -67,7 +69,7 @@ impl Mesh {
     pub unsafe fn draw(&self, shader: &tofu::Shader) {
         for (i, texture_data) in self.textures.iter().enumerate() {
             shader.set_int(&texture_data.texture_type, i as i32);
-            texture_data.texture.bind(gl::TEXTURE0 + i as u32);
+            texture_data.texture.bind_texture(gl::TEXTURE0 + i as u32);
         }
 
         gl::BindVertexArray(self.vao);

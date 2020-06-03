@@ -12,7 +12,7 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(model_filepath: &str) -> Model {
+    pub fn load_from_file(model_filepath: &str) -> Model {
         let mut model = Model::default();
         model.load_model(model_filepath);
         model
@@ -155,7 +155,7 @@ impl Model {
         }
 
         let filepath = format!("{}/{}", self.directory, texture_filepath);
-        let texture = tofu::Texture::new(&filepath);
+        let texture = tofu::Texture::load_from_file(&filepath);
 
         let texture_data = tofu::mesh::TextureData {
             texture,
@@ -166,5 +166,36 @@ impl Model {
         self.textures_loaded.push(texture_data.clone());
 
         texture_data
+    }
+
+    pub fn get_fullscreen_triangle() -> Model {
+        let mut model = Model::default();
+
+        let vertices: Vec<tofu::mesh::Vertex> = [
+            tofu::mesh::Vertex {
+                position: vec3(-1.0, 3.0, 0.0),
+                uv: vec2(0.0, 2.0),
+                ..tofu::mesh::Vertex::default()
+            },
+            tofu::mesh::Vertex {
+                position: vec3(-1.0, -1.0, 0.0),
+                uv: vec2(0.0, 0.0),
+                ..tofu::mesh::Vertex::default()
+            },
+            tofu::mesh::Vertex {
+                position: vec3(3.0, -1.0, 0.0),
+                uv: vec2(2.0, 0.0),
+                ..tofu::mesh::Vertex::default()
+            },
+        ]
+        .to_vec();
+
+        model.meshes.push(tofu::mesh::Mesh::new(
+            vertices,
+            [0, 1, 2].to_vec(),
+            [].to_vec(),
+        ));
+
+        model
     }
 }

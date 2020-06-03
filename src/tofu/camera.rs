@@ -24,7 +24,7 @@ pub struct Camera {
     target_yaw: f32,
     target_pitch: f32,
     was_mouse_pressed: bool,
-    mouse_lock_pos: Vector2<f32>,
+    last_mouse_pos: Vector2<f32>,
 }
 
 impl Camera {
@@ -44,7 +44,7 @@ impl Camera {
             target_yaw: -90.0,
             target_pitch: 0.0,
             was_mouse_pressed: false,
-            mouse_lock_pos: Vector2::zero(),
+            last_mouse_pos: Vector2::zero(),
         }
     }
 
@@ -83,9 +83,9 @@ impl Camera {
         let cursor_pos = vec2(cx as f32, cy as f32);
 
         if !self.was_mouse_pressed && window.get_mouse_button(LOOK_BUTTON) == Action::Press {
-            window.set_cursor_mode(CursorMode::Hidden);
+            window.set_cursor_mode(CursorMode::Disabled);
             self.was_mouse_pressed = true;
-            self.mouse_lock_pos = cursor_pos;
+            self.last_mouse_pos = cursor_pos;
             return;
         }
 
@@ -93,15 +93,14 @@ impl Camera {
             return;
         }
 
-        let cursor_delta = cursor_pos - self.mouse_lock_pos;
+        let cursor_delta = cursor_pos - self.last_mouse_pos;
+        self.last_mouse_pos = cursor_pos;
 
         self.target_yaw += cursor_delta.x * MOUSE_SENSITIVITY;
         self.target_pitch += -cursor_delta.y * MOUSE_SENSITIVITY;
         self.target_pitch = self.target_pitch.min(89.99).max(-89.99);
 
         self.update_direction_vectors();
-
-        window.set_cursor_pos(self.mouse_lock_pos.x as f64, self.mouse_lock_pos.y as f64);
     }
 
     fn update_direction_vectors(&mut self) {

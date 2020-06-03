@@ -104,10 +104,10 @@ impl Shader {
                 info_log.as_mut_ptr() as *mut GLchar,
             );
 
-            println!(
+            panic!(
                 "ERROR::SHADER_COMPILATION_ERROR::{}\n{}\n",
                 shader_type,
-                str::from_utf8(&info_log).unwrap()
+                str::from_utf8_unchecked(&info_log)
             );
         }
     }
@@ -126,9 +126,9 @@ impl Shader {
                 info_log.as_mut_ptr() as *mut GLchar,
             );
 
-            println!(
+            panic!(
                 "ERROR::PROGRAM_LINKER_ERROR\n{}\n",
-                str::from_utf8(&info_log).unwrap()
+                str::from_utf8_unchecked(&info_log)
             );
         }
     }
