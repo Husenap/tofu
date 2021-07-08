@@ -14,3 +14,6 @@ mod model;
 pub use model::*;
 
 mod mesh;
+
+pub mod framebuffer;
+pub use framebuffer::Framebuffer;
